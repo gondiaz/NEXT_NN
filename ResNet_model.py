@@ -185,3 +185,37 @@ class GenData(Sequence):
 # The model is trained with:
 # hist = model.fit_generator(data_gen, shuffle=True, epochs=20, initial_epoch=0, verbose=1, validation_data=(x_valid,y_valid), callbacks=lcallbacks)
 
+def auc_roc(y_true, y_pred):
+    # any tensorflow metric
+    value, update_op = tf.metrics.auc(y_true,y_pred)
+
+    # find all variables created for this metric
+    metric_vars = [i for i in tf.local_variables() if 'auc_roc' in i.name.split('/')[1]]
+
+    # Add metric variables to GLOBAL_VARIABLES collection.
+    # They will be initialized for new session.
+    for v in metric_vars:
+        tf.add_to_collection(tf.GraphKeys.GLOBAL_VARIABLES, v)
+
+    # force to update metric values
+    with tf.control_dependencies([update_op]):
+        value = tf.identity(value)
+        return value
+def svs(y_true, y_pred):
+    # any tensorflow metric
+    specificity = 0.99
+    value, update_op = tf.metrics.sensitivity_at_specificity(y_true,y_pred, specificity)
+
+    # find all variables created for this metric
+    metric_vars = [i for i in tf.local_variables() if 'svs' in i.name.split('/')[1]]
+
+    # Add metric variables to GLOBAL_VARIABLES collection.
+    # They will be initialized for new session.
+    for v in metric_vars:
+        tf.add_to_collection(tf.GraphKeys.GLOBAL_VARIABLES, v)
+
+    # force to update metric values
+    with tf.control_dependencies([update_op]):
+        value = tf.identity(value)
+        return value
+
