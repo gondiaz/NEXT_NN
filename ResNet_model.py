@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import keras.backend.tensorflow_backend as K
-from keras.models               import Model
+from keras.models               import Model, load_model
 from keras.layers               import Input, Dense, MaxPooling3D, AveragePooling3D, Conv3D, Activation, Dropout, ZeroPadding3D, Flatten, Add, BatchNormalization
 from keras.optimizers           import SGD, Adam
 from keras                      import callbacks
@@ -165,8 +165,8 @@ class GenData(Sequence):
         axes1=np.random.choice(3,2, replace=False)
         axes2=np.random.choice(3,2, replace=False)
         #those are random rotations
-        angle1=15*np.random.randint(12)
-        angle2=15*np.random.randint(12)
+        angle1=15.*np.random.randint(12)
+        angle2=15.*np.random.randint(12)
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_w=self.weights[idx * self.batch_size:(idx + 1) * self.batch_size]

@@ -35,13 +35,13 @@ def voxelize_hits_per_ev(hits             : pd.DataFrame,
                               weights = hit_energies)    
     return E
 
-def fit_data_to_size(data):
-    pad_b  = np.max([[0,0,0],((size-np.array(data.shape))/2)]).astype('int')
-    pad_a  =  np.max([[0,0,0],(size-np.array(data.shape))-pad_b]).astype('int')
-    padded = np.pad(data,np.column_stack([pad_b,pad_a]), mode='constant')
+def fit_data_to_size(data, size):
+    pad_b   = np.max([[0,0,0],((size-np.array(data.shape))/2)]).astype('int')
+    pad_a   = np.max([[0,0,0],(size-np.array(data.shape))-pad_b]).astype('int')
+    padded  = np.pad(data,np.column_stack([pad_b,pad_a]), mode='constant')
     crop_b  = ((np.array(padded.shape)-size)/2).astype('int')
-    crop_a  =  size+crop_b    
-    cropped= padded[crop_b[0]:crop_a[0],crop_b[1]:crop_a[1],crop_b[2]:crop_a[2]]
+    crop_a  = size+crop_b    
+    cropped = padded[crop_b[0]:crop_a[0],crop_b[1]:crop_a[1],crop_b[2]:crop_a[2]]
     return cropped
 
 def make_data_voxels(infile, voxel_dimension, size, threshold=0.8):
@@ -64,13 +64,11 @@ def make_data_voxels(infile, voxel_dimension, size, threshold=0.8):
             except KeyError:
                 labs.append(-1)
                 en_true.append(-1)
-                
     datas   = np.array(datas)
     labs    = np.array(labs)
     ens     = np.array(ens)
     en_true = np.array(en_true)
     return datas, labs, en_true,evs, ens, ev_rej
-
 
 def plot_3d_vox(xarr, th=0,normalize=True, color=None,edgecolor=None, labels=False):
     dim=xarr.shape
@@ -108,8 +106,6 @@ def plot_3d_vox(xarr, th=0,normalize=True, color=None,edgecolor=None, labels=Fal
     ax.set_zlim(0, dim[2])
     plt.show()
 
-
-
 def make_equal_sample_and_shuffle(x, y, event):
     mask_y=(y>0)
     y_signal=y[mask_y]
@@ -118,10 +114,33 @@ def make_equal_sample_and_shuffle(x, y, event):
     x_back=x[~mask_y]
     x_eq=np.concatenate((x_signal, x_back[:len(x_signal)]), axis=0)
     y_eq=np.concatenate((y_signal, y_back[:len(x_signal)]), axis=0)
-    events_eq=np.concatenate((event[mask_y], event[~mask_y][:len(x_signal)]), axis=0)
+    evs_eq=np.concatenate((event[mask_y], event[~mask_y][:len(x_signal)]), axis=0)
     s=np.arange(len(x_eq))
     np.random.seed(0)
+    np.random.shuffle(s)
     x_eq=x_eq[s]
     y_eq=y_eq[s]
     evs_eq=evs_eq[s]
     return x_eq,y_eq,evs_eq
+
+def make_dataset (filesin, voxel_dimension, threshold, make_equal=False):
+    x=[]
+    lab=[]
+    event=[]
+    energy=[]
+    en_true=[]
+    charge=[]
+    for fi,fn in enumerate(filesin):
+        try:
+            x_f, lab_f, en_true_f, event_f, charge_f, _ = make_data_voxels(fn,voxel_dimension=np.array(voxel_dimension), size=np.array([32,32,32]), threshold=0.80)
+            x.extend(x_f);lab.extend(lab_f);en_true.extend(en_true_f),event.extend(event_f);charge.extend(charge_f)
+        except Exception as e:
+            print(e)
+            continue
+    
+    x=np.array(x); lab=np.array(lab);en_true=np.array(en_true); event=np.array(event); charge=np.array(charge)
+    if make_equal:
+        x, y, evs = make_equal_sample_and_shuffle (x,lab,event)
+    else:
+        x, y, evs = x,lab,event
+    return x, y, evs
